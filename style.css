@@ -1,0 +1,152 @@
+:root {
+  --bg: #12141c;
+  --surface: #1b1e2a;
+  --text: #edeae2;
+  --text-muted: #8b8fa3;
+  --accent: #e8a33d;
+  --accent-alt: #4fa8a0;
+  --border: #2a2e3d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+}
+
+main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 6rem 1.5rem 4rem;
+}
+
+.hero {
+  text-align: center;
+}
+
+.hero h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 3rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.01em;
+}
+
+.tagline {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  margin: 0 0 2.5rem;
+  line-height: 1.5;
+}
+
+#search-form {
+  position: relative;
+}
+
+#search-input {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  font-size: 1.1rem;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+#search-input:focus {
+  border-color: var(--accent);
+}
+
+.suggestions {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.suggestions.hidden,
+.result.hidden {
+  display: none;
+}
+
+.suggestions li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+}
+
+.suggestions li:hover {
+  background: #23273580;
+}
+
+.suggestions img {
+  width: 32px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: var(--border);
+}
+
+.suggestions .meta {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.result {
+  margin-top: 3rem;
+  text-align: left;
+}
+
+.result h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin: 0 0 1.25rem;
+}
+
+.platform {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.9rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.platform-name {
+  font-weight: 500;
+}
+
+.platform-countries {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: right;
+}
+
+.vpn-callout {
+  margin-top: 1.5rem;
+  padding: 1.1rem 1.25rem;
+  background: #23394140;
+  border: 1px solid var(--accent-alt);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.vpn-callout strong {
+  color: var(--accent-alt);
+}
