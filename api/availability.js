@@ -27,12 +27,10 @@ module.exports = async (req, res) => {
       return { country, options: cached.options };
     }
 
-    // NOTE: double-check this exact path/id-format against
-    // docs.movieofthenight.com once you're signed in -- some versions of
-    // this API want the id prefixed (e.g. "movie/<id>") rather than the
-    // bare TMDB id. If this 404s, that's the first thing to fix, and we'll
-    // do it together against a real response.
-    const url = `https://${host}/shows/${tmdbId}?country=${country}`;
+    // The API needs the title type baked into the id (movie/1396 or
+    // tv/1396) because TMDB reuses the same numeric id across movies and
+    // TV shows -- a bare id is ambiguous.
+    const url = `https://${host}/shows/${type}/${tmdbId}?country=${country}`;
 
     try {
       const response = await fetch(url, {
@@ -41,12 +39,16 @@ module.exports = async (req, res) => {
           'X-RapidAPI-Host': host,
         },
       });
-      if (!response.ok) return { country, options: [] };
+      if (!response.ok) {
+        console.error(`Streaming Availability API error for ${type}/${tmdbId} (${country}): ${response.status} ${await response.text()}`);
+        return { country, options: [] };
+      }
       const data = await response.json();
       const options = (data.streamingOptions && data.streamingOptions[country]) || [];
       cache.set(cacheKey, { time: Date.now(), options });
       return { country, options };
     } catch (err) {
+      console.error(`Streaming Availability API request failed for ${type}/${tmdbId} (${country}):`, err);
       return { country, options: [] };
     }
   });
