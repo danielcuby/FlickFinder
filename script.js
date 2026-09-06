@@ -275,7 +275,11 @@ function renderPosterWall(results) {
   if (posters.length < 4 || !posterWall) return;
 
   posterWall.innerHTML = '';
-  const rowCount = 3;
+  // Phones get a single thin row instead of three -- fewer images
+  // actually requested, not just fewer shown, since a hidden <img> with
+  // a src still downloads.
+  const isPhone = window.innerWidth <= 480;
+  const rowCount = isPhone ? 1 : 3;
   const perRow = Math.ceil(posters.length / rowCount);
 
   for (let i = 0; i < rowCount; i++) {
