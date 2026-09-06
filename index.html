@@ -10,6 +10,9 @@
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div class="poster-wall" id="poster-wall" aria-hidden="true"></div>
+  <div class="backdrop-overlay" aria-hidden="true"></div>
+
   <main>
     <section class="hero">
       <h1>FlickFinder</h1>
@@ -20,13 +23,18 @@
       <ul id="suggestions" class="suggestions hidden"></ul>
     </section>
 
-    <section id="result" class="result hidden"></section>
+    <section id="trending" class="trending">
+      <h2>Popular today</h2>
+      <div class="trending-grid" id="trending-grid"></div>
+    </section>
 
-    <footer class="attribution">
-      Streaming data from <a href="https://www.themoviedb.org/" target="_blank" rel="noopener">TMDB</a>
-      and <a href="https://www.justwatch.com/" target="_blank" rel="noopener">JustWatch</a>.
-    </footer>
+    <section id="result" class="result hidden"></section>
   </main>
+
+  <footer class="attribution">
+    Streaming data from <a href="https://www.themoviedb.org/" target="_blank" rel="noopener">TMDB</a>
+    and <a href="https://www.justwatch.com/" target="_blank" rel="noopener">JustWatch</a>.
+  </footer>
 
   <script src="script.js"></script>
 </body>
