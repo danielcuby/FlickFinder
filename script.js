@@ -2,6 +2,9 @@ const form = document.getElementById('search-form');
 const input = document.getElementById('search-input');
 const suggestionsEl = document.getElementById('suggestions');
 const resultEl = document.getElementById('result');
+const trendingSection = document.getElementById('trending');
+const trendingGrid = document.getElementById('trending-grid');
+const posterWall = document.getElementById('poster-wall');
 
 let debounceTimer;
 
@@ -51,15 +54,28 @@ function renderSuggestions(results) {
 async function selectTitle(item) {
   input.value = item.title;
   suggestionsEl.classList.add('hidden');
+  trendingSection.classList.add('hidden');
   resultEl.classList.remove('hidden');
-  resultEl.innerHTML = `<h2>${item.title}</h2><p class="tagline">Checking where it's streaming…</p>`;
+  resultEl.innerHTML = `
+    <div class="result-header">
+      ${item.poster ? `<img src="${item.poster}" class="result-poster" alt="" />` : ''}
+      <h2>${item.title}</h2>
+    </div>
+    <p class="tagline">Checking where it's streaming…</p>
+  `;
 
   try {
     const res = await fetch(`/api/availability?tmdbId=${item.tmdbId}&type=${item.type}`);
     const data = await res.json();
     renderResult(item, data);
   } catch (err) {
-    resultEl.innerHTML = `<h2>${item.title}</h2><p class="tagline">Couldn't load streaming info. Try again.</p>`;
+    resultEl.innerHTML = `
+      <div class="result-header">
+        ${item.poster ? `<img src="${item.poster}" class="result-poster" alt="" />` : ''}
+        <h2>${item.title}</h2>
+      </div>
+      <p class="tagline">Couldn't load streaming info. Try again.</p>
+    `;
   }
 }
 
@@ -95,7 +111,10 @@ function renderResult(item, data) {
   const anyAvailable = platforms.some((p) => p.count > 0);
 
   resultEl.innerHTML = `
-    <h2>${item.title}</h2>
+    <div class="result-header">
+      ${item.poster ? `<img src="${item.poster}" class="result-poster" alt="" />` : ''}
+      <h2>${item.title}</h2>
+    </div>
     ${rows}
     ${data.hadErrors ? `<p class="note">Couldn't check a few regions just now — results may be incomplete.</p>` : ''}
     ${
@@ -112,3 +131,60 @@ function renderResult(item, data) {
     });
   });
 }
+
+// One call powers both the clickable "popular today" row and the
+// drifting background -- no need to fetch trending data twice.
+async function loadTrending() {
+  try {
+    const res = await fetch('/api/trending');
+    const data = await res.json();
+    const results = data.results || [];
+    renderTrendingGrid(results);
+    renderPosterWall(results);
+  } catch (err) {
+    trendingSection.classList.add('hidden');
+  }
+}
+
+function renderTrendingGrid(results) {
+  if (!results.length) {
+    trendingSection.classList.add('hidden');
+    return;
+  }
+  trendingGrid.innerHTML = '';
+  results.slice(0, 12).forEach((item) => {
+    const div = document.createElement('div');
+    div.className = 'trending-item';
+    div.innerHTML = `
+      <img src="${item.poster}" alt="" />
+      <div class="trending-title">${item.title}</div>
+    `;
+    div.addEventListener('click', () => selectTitle(item));
+    trendingGrid.appendChild(div);
+  });
+}
+
+function renderPosterWall(results) {
+  const posters = results.filter((r) => r.poster);
+  if (posters.length < 4 || !posterWall) return;
+
+  posterWall.innerHTML = '';
+  const rowCount = 3;
+  const perRow = Math.ceil(posters.length / rowCount);
+
+  for (let i = 0; i < rowCount; i++) {
+    const offset = i * perRow;
+    const rowPosters = [...posters.slice(offset), ...posters.slice(0, offset)];
+    if (!rowPosters.length) continue;
+
+    const row = document.createElement('div');
+    row.className = i % 2 === 1 ? 'poster-row reverse' : 'poster-row';
+    row.style.animationDuration = `${70 + i * 25}s`;
+    // Doubled so the translateX(-50%) loop is seamless.
+    const doubled = [...rowPosters, ...rowPosters];
+    row.innerHTML = doubled.map((p) => `<img src="${p.poster}" alt="" />`).join('');
+    posterWall.appendChild(row);
+  }
+}
+
+loadTrending();
