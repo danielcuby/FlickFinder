@@ -9,6 +9,52 @@ const mainEl = document.querySelector('main');
 
 let debounceTimer;
 
+// TODO: replace with your real ZoogVPN affiliate/tracking link once you
+// have it from the meeting -- this placeholder just points at their
+// homepage so nothing is wired to a real commission yet.
+const ZOOGVPN_URL = 'https://zoogvpn.com';
+
+const VPN_MESSAGES = [
+  'Unlock this and thousands of other titles',
+  'Fast, secure streaming from anywhere',
+  'One click, no more region-locked libraries',
+];
+
+let vpnMessageInterval = null;
+
+function stopVpnMessageRotation() {
+  clearInterval(vpnMessageInterval);
+  vpnMessageInterval = null;
+}
+
+function startVpnMessageRotation() {
+  stopVpnMessageRotation();
+  const el = resultEl.querySelector('.vpn-banner-message');
+  if (!el) return;
+  let i = 0;
+  vpnMessageInterval = setInterval(() => {
+    i = (i + 1) % VPN_MESSAGES.length;
+    el.style.opacity = '0';
+    setTimeout(() => {
+      el.textContent = VPN_MESSAGES[i];
+      el.style.opacity = '1';
+    }, 300);
+  }, 3500);
+}
+
+function vpnBannerHtml(leadIn) {
+  return `
+    <div class="vpn-section">
+      <p class="vpn-lead">${leadIn}</p>
+      <a class="vpn-banner" href="${ZOOGVPN_URL}" target="_blank" rel="noopener sponsored">
+        <span class="vpn-banner-message">${VPN_MESSAGES[0]}</span>
+        <span class="vpn-banner-cta">Get ZoogVPN →</span>
+      </a>
+      <p class="vpn-disclosure">FlickFinder may earn a commission if you sign up through this link.</p>
+    </div>
+  `;
+}
+
 function resetHome() {
   input.value = '';
   suggestionsEl.classList.add('hidden');
@@ -17,6 +63,7 @@ function resetHome() {
   resultEl.innerHTML = '';
   trendingSection.classList.remove('hidden');
   mainEl.classList.remove('wide');
+  stopVpnMessageRotation();
 }
 
 document.getElementById('logo').addEventListener('click', resetHome);
@@ -175,13 +222,14 @@ function renderResult(item, data) {
         ${data.hadErrors ? `<p class="note">Couldn't check a few regions just now — results may be incomplete.</p>` : ''}
         ${
           anyAvailable
-            ? `<div class="vpn-callout">Not seeing it in your country? <strong>ZoogVPN</strong> can get you into one that has it.</div>`
-            : `<div class="vpn-callout"><strong>Not currently streaming</strong> in any of the regions we checked. A VPN can get you into one where it's live — try ZoogVPN.</div>`
+            ? vpnBannerHtml('Not seeing it in your country?')
+            : vpnBannerHtml('Not currently streaming in any of the regions we checked.')
         }
       </div>
     </div>
   `;
   bindBackLink();
+  startVpnMessageRotation();
 
   resultEl.querySelectorAll('.see-more').forEach((btn) => {
     btn.addEventListener('click', () => {
