@@ -425,18 +425,57 @@ main.wide {
   margin-top: 0.75rem;
 }
 
-.vpn-callout {
+.vpn-section {
   margin-top: 1.5rem;
-  padding: 1.1rem 1.25rem;
-  background: rgba(31, 156, 143, 0.08);
-  border: 1px solid var(--accent-alt);
-  border-radius: 10px;
-  font-size: 0.95rem;
-  line-height: 1.5;
 }
 
-.vpn-callout strong {
-  color: var(--accent-alt);
+.vpn-lead {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin: 0 0 0.75rem;
+}
+
+.vpn-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.1rem 1.4rem;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #fff;
+  background: linear-gradient(120deg, var(--accent), var(--accent-alt), var(--accent));
+  background-size: 200% 200%;
+  animation: bannerShift 6s ease infinite;
+  transition: transform 0.15s ease;
+}
+
+.vpn-banner:hover {
+  transform: translateY(-2px);
+}
+
+@keyframes bannerShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.vpn-banner-message {
+  font-weight: 500;
+  transition: opacity 0.3s ease;
+}
+
+.vpn-banner-cta {
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.vpn-disclosure {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin: 0.5rem 0 0;
 }
 
 .attribution {
