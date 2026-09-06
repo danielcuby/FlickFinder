@@ -214,6 +214,36 @@ main {
   flex-shrink: 0;
 }
 
+.result-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.result-info h2 {
+  margin: 0 0 0.5rem;
+}
+
+.result-meta {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+}
+
+.result-overview {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
 .trending {
   margin-top: 3rem;
 }
