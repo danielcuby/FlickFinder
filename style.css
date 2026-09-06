@@ -230,10 +230,10 @@ main.wide {
 .badge {
   font-size: 0.75rem;
   padding: 0.15rem 0.55rem;
-  border: 1px solid var(--border);
+  border: none;
   border-radius: 999px;
-  background: #ece4d4;
-  color: var(--text);
+  background: var(--text);
+  color: var(--surface);
 }
 
 .result-overview {
@@ -297,9 +297,9 @@ main.wide {
   font-size: 0.75rem;
   padding: 0.15rem 0.55rem;
   border-radius: 999px;
-  background: #ece4d4;
-  border: 1px solid var(--border);
-  color: var(--text);
+  background: var(--text);
+  border: none;
+  color: var(--surface);
 }
 
 .see-more {
