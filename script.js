@@ -8,6 +8,26 @@ const posterWall = document.getElementById('poster-wall');
 
 let debounceTimer;
 
+function resetHome() {
+  input.value = '';
+  suggestionsEl.classList.add('hidden');
+  suggestionsEl.innerHTML = '';
+  resultEl.classList.add('hidden');
+  resultEl.innerHTML = '';
+  trendingSection.classList.remove('hidden');
+}
+
+document.getElementById('logo').addEventListener('click', resetHome);
+
+function backLinkHtml() {
+  return `<button type="button" class="back-link">← Back to search</button>`;
+}
+
+function bindBackLink() {
+  const back = resultEl.querySelector('.back-link');
+  if (back) back.addEventListener('click', resetHome);
+}
+
 input.addEventListener('input', () => {
   clearTimeout(debounceTimer);
   const q = input.value.trim();
@@ -57,12 +77,14 @@ async function selectTitle(item) {
   trendingSection.classList.add('hidden');
   resultEl.classList.remove('hidden');
   resultEl.innerHTML = `
+    ${backLinkHtml()}
     <div class="result-header">
       ${item.poster ? `<img src="${item.poster}" class="result-poster" alt="" />` : ''}
       <h2>${item.title}</h2>
     </div>
     <p class="tagline">Checking where it's streaming…</p>
   `;
+  bindBackLink();
 
   try {
     const res = await fetch(`/api/availability?tmdbId=${item.tmdbId}&type=${item.type}`);
@@ -70,12 +92,14 @@ async function selectTitle(item) {
     renderResult(item, data);
   } catch (err) {
     resultEl.innerHTML = `
+      ${backLinkHtml()}
       <div class="result-header">
         ${item.poster ? `<img src="${item.poster}" class="result-poster" alt="" />` : ''}
         <h2>${item.title}</h2>
       </div>
       <p class="tagline">Couldn't load streaming info. Try again.</p>
     `;
+    bindBackLink();
   }
 }
 
@@ -111,6 +135,7 @@ function renderResult(item, data) {
   const anyAvailable = platforms.some((p) => p.count > 0);
 
   resultEl.innerHTML = `
+    ${backLinkHtml()}
     <div class="result-header">
       ${item.poster ? `<img src="${item.poster}" class="result-poster" alt="" />` : ''}
       <h2>${item.title}</h2>
@@ -123,6 +148,7 @@ function renderResult(item, data) {
         : `<div class="vpn-callout"><strong>Not currently streaming</strong> in any of the regions we checked. A VPN can get you into one where it's live — try ZoogVPN.</div>`
     }
   `;
+  bindBackLink();
 
   resultEl.querySelectorAll('.platform.expandable').forEach((row) => {
     row.addEventListener('click', () => {
@@ -188,3 +214,20 @@ function renderPosterWall(results) {
 }
 
 loadTrending();
+
+document.getElementById('trending-prev').addEventListener('click', () => {
+  trendingGrid.scrollBy({ left: -320, behavior: 'smooth' });
+});
+
+document.getElementById('trending-next').addEventListener('click', () => {
+  trendingGrid.scrollBy({ left: 320, behavior: 'smooth' });
+});
+
+// Lets a normal vertical mouse wheel scroll this row sideways too, since
+// not everyone has a trackpad or a horizontal scroll wheel.
+trendingGrid.addEventListener('wheel', (e) => {
+  if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+    e.preventDefault();
+    trendingGrid.scrollBy({ left: e.deltaY });
+  }
+});
