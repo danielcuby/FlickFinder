@@ -1,3 +1,8 @@
+function truncate(text, max) {
+  if (!text || text.length <= max) return text || null;
+  return text.slice(0, max - 1).trimEnd() + '…';
+}
+
 module.exports = async (req, res) => {
   const { q } = req.query;
   if (!q || !q.trim()) {
@@ -23,6 +28,8 @@ module.exports = async (req, res) => {
         title: item.title || item.name,
         year: (item.release_date || item.first_air_date || '').slice(0, 4),
         poster: item.poster_path ? `https://image.tmdb.org/t/p/w185${item.poster_path}` : null,
+        rating: item.vote_average > 0 ? item.vote_average.toFixed(1) : null,
+        overview: truncate(item.overview, 160),
       }));
 
     res.status(200).json({ results });
