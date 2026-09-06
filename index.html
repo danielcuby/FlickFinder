@@ -15,7 +15,7 @@
 
   <main>
     <section class="hero">
-      <h1>FlickFinder</h1>
+      <h1 id="logo">FlickFinder</h1>
       <p class="tagline">Type a movie or show. See where it's streaming, and where in the world.</p>
       <form id="search-form" autocomplete="off">
         <input id="search-input" type="text" placeholder="Search a title…" />
@@ -25,7 +25,11 @@
 
     <section id="trending" class="trending">
       <h2>Popular today</h2>
-      <div class="trending-grid" id="trending-grid"></div>
+      <div class="trending-wrap">
+        <button type="button" class="trending-arrow trending-arrow-left" id="trending-prev" aria-label="Scroll left">‹</button>
+        <div class="trending-grid" id="trending-grid"></div>
+        <button type="button" class="trending-arrow trending-arrow-right" id="trending-next" aria-label="Scroll right">›</button>
+      </div>
     </section>
 
     <section id="result" class="result hidden"></section>
