@@ -80,6 +80,26 @@ body {
   }
 }
 
+/* Phones specifically (not tablets -- no iPad is this narrow) get a
+   lighter single-row hint near the top instead of nothing. script.js
+   also only builds one row of images at this width, so this isn't
+   costing extra data over the fully-hidden version. */
+@media (max-width: 480px) {
+  .poster-wall {
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .poster-row img {
+    width: 70px;
+    height: 105px;
+  }
+
+  .backdrop-overlay {
+    background: linear-gradient(180deg, rgba(247, 243, 236, 0.4), var(--bg) 28%);
+  }
+}
+
 main {
   position: relative;
   z-index: 2;
