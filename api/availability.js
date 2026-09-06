@@ -41,6 +41,41 @@ function matchMainPlatform(providerName) {
   return MAIN_PLATFORMS.find((p) => p.match.some((m) => lower.includes(m)));
 }
 
+// Age rating lives on a different endpoint than watch/providers, and movies
+// and TV shows use different endpoints from each other. Prefers a US
+// rating (most globally recognizable) and falls back to whichever country
+// has one set.
+async function getCertification(type, tmdbId, apiKey) {
+  try {
+    if (type === 'tv') {
+      const res = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/content_ratings?api_key=${apiKey}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      const results = data.results || [];
+      const match = results.find((r) => r.iso_3166_1 === 'US' && r.rating) || results.find((r) => r.rating);
+      return match ? match.rating : null;
+    }
+
+    const res = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/release_dates?api_key=${apiKey}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const results = data.results || [];
+    const certOf = (entry) => (entry.release_dates || []).find((rd) => rd.certification)?.certification;
+    const us = results.find((r) => r.iso_3166_1 === 'US');
+    if (us) {
+      const cert = certOf(us);
+      if (cert) return cert;
+    }
+    for (const entry of results) {
+      const cert = certOf(entry);
+      if (cert) return cert;
+    }
+    return null;
+  } catch (err) {
+    return null;
+  }
+}
+
 module.exports = async (req, res) => {
   const { tmdbId, type } = req.query;
   if (!tmdbId || !type) {
@@ -60,10 +95,14 @@ module.exports = async (req, res) => {
   const url = `https://api.themoviedb.org/3/${mediaPath}/${tmdbId}/watch/providers?api_key=${apiKey}`;
 
   try {
-    const response = await fetch(url);
+    const [response, certification] = await Promise.all([
+      fetch(url),
+      getCertification(type, tmdbId, apiKey),
+    ]);
+
     if (!response.ok) {
       console.error(`TMDB watch/providers error for ${type}/${tmdbId}: ${response.status}`);
-      res.status(200).json({ platforms: [], checkedCount: 0, hadErrors: true });
+      res.status(200).json({ platforms: [], checkedCount: 0, hadErrors: true, certification });
       return;
     }
 
@@ -102,11 +141,11 @@ module.exports = async (req, res) => {
     // title" (what JustWatch actually returned), not every country in the
     // world -- so "available in all regions" means all regions this title
     // has any presence in, not literally everywhere on Earth.
-    const responseBody = { platforms, checkedCount: countryCodes.length, hadErrors: false };
+    const responseBody = { platforms, checkedCount: countryCodes.length, hadErrors: false, certification };
     cache.set(cacheKey, { time: Date.now(), data: responseBody });
     res.status(200).json(responseBody);
   } catch (err) {
     console.error(`TMDB watch/providers request failed for ${type}/${tmdbId}:`, err);
-    res.status(200).json({ platforms: [], checkedCount: 0, hadErrors: true });
+    res.status(200).json({ platforms: [], checkedCount: 0, hadErrors: true, certification: null });
   }
 };
