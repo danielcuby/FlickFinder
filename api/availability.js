@@ -71,16 +71,18 @@ module.exports = async (req, res) => {
     const results = data.results || {};
     const countryCodes = Object.keys(results);
 
-    // id -> { name, countries: Set }
+    // Only track the main platforms — anything else JustWatch returns
+    // (regional or niche services) is dropped rather than shown, so the
+    // list stays to well-known names and popular platforms never get
+    // outranked by an obscure one with wider incidental coverage.
     const byPlatform = {};
     countryCodes.forEach((country) => {
       const flatrate = results[country].flatrate || [];
       flatrate.forEach((provider) => {
         const mainMatch = matchMainPlatform(provider.provider_name);
-        const key = mainMatch ? mainMatch.id : `other-${provider.provider_id}`;
-        const name = mainMatch ? mainMatch.name : provider.provider_name;
-        if (!byPlatform[key]) byPlatform[key] = { name, countries: new Set() };
-        byPlatform[key].countries.add(country);
+        if (!mainMatch) return;
+        if (!byPlatform[mainMatch.id]) byPlatform[mainMatch.id] = { name: mainMatch.name, countries: new Set() };
+        byPlatform[mainMatch.id].countries.add(country);
       });
     });
 
