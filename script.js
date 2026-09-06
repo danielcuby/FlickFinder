@@ -64,35 +64,51 @@ async function selectTitle(item) {
 }
 
 function renderResult(item, data) {
-  const platforms = Object.entries(data.platforms || {});
-
-  if (!platforms.length) {
-    resultEl.innerHTML = `
-      <h2>${item.title}</h2>
-      <div class="vpn-callout">
-        <strong>Not currently streaming</strong> in any of the countries we checked.
-        A VPN can get you into a region where it's live — try ZoogVPN.
-      </div>
-    `;
-    return;
-  }
+  const platforms = data.platforms || [];
+  const checkedCount = data.checkedCount || 0;
 
   const rows = platforms
-    .map(
-      ([name, countries]) => `
-      <div class="platform">
-        <span class="platform-name">${name}</span>
-        <span class="platform-countries">${countries.map((c) => c.toUpperCase()).join(', ')}</span>
-      </div>
-    `
-    )
+    .map((p, idx) => {
+      if (p.count === 0) {
+        return `
+          <div class="platform unavailable">
+            <span class="platform-name">${p.name}</span>
+            <span class="platform-countries">Not available</span>
+          </div>
+        `;
+      }
+
+      const isAll = p.count === checkedCount;
+      const summary = isAll ? 'Available in all regions' : `Available in ${p.count} of ${checkedCount} regions`;
+      const listId = `countries-${idx}`;
+
+      return `
+        <div class="platform expandable" data-target="${listId}">
+          <span class="platform-name">${p.name}</span>
+          <span class="platform-countries">${summary} ▾</span>
+        </div>
+        <div class="country-list hidden" id="${listId}">${p.countries.join(', ')}</div>
+      `;
+    })
     .join('');
+
+  const anyAvailable = platforms.some((p) => p.count > 0);
 
   resultEl.innerHTML = `
     <h2>${item.title}</h2>
     ${rows}
-    <div class="vpn-callout">
-      Not seeing it in your country? <strong>ZoogVPN</strong> can get you into one that has it.
-    </div>
+    ${data.hadErrors ? `<p class="note">Couldn't check a few regions just now — results may be incomplete.</p>` : ''}
+    ${
+      anyAvailable
+        ? `<div class="vpn-callout">Not seeing it in your country? <strong>ZoogVPN</strong> can get you into one that has it.</div>`
+        : `<div class="vpn-callout"><strong>Not currently streaming</strong> in any of the regions we checked. A VPN can get you into one where it's live — try ZoogVPN.</div>`
+    }
   `;
+
+  resultEl.querySelectorAll('.platform.expandable').forEach((row) => {
+    row.addEventListener('click', () => {
+      const target = document.getElementById(row.dataset.target);
+      target.classList.toggle('hidden');
+    });
+  });
 }
