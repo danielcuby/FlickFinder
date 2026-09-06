@@ -1,11 +1,11 @@
 :root {
-  --bg: #12141c;
-  --surface: #1b1e2a;
-  --text: #edeae2;
-  --text-muted: #8b8fa3;
-  --accent: #e8a33d;
-  --accent-alt: #4fa8a0;
-  --border: #2a2e3d;
+  --bg: #1a1d2e;
+  --surface: #242840;
+  --text: #f5f1e8;
+  --text-muted: #9ea3ba;
+  --accent: #f2ac4c;
+  --accent-alt: #5cc2b8;
+  --border: #363b56;
 }
 
 * {
@@ -49,7 +49,7 @@ body {
   height: 195px;
   object-fit: cover;
   border-radius: 8px;
-  opacity: 0.45;
+  opacity: 0.6;
   flex-shrink: 0;
 }
 
@@ -67,7 +67,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(180deg, rgba(18, 20, 28, 0.85), rgba(18, 20, 28, 0.94) 45%, var(--bg) 85%);
+  background: linear-gradient(180deg, rgba(26, 29, 46, 0.62), rgba(26, 29, 46, 0.8) 45%, var(--bg) 85%);
 }
 
 /* Background is decorative and data-heavy -- skip it on small screens */
@@ -98,6 +98,23 @@ main {
   font-weight: 600;
   margin: 0 0 0.75rem;
   letter-spacing: -0.01em;
+  cursor: pointer;
+}
+
+.back-link {
+  display: inline-block;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.back-link:hover {
+  color: var(--accent);
 }
 
 .tagline {
@@ -153,7 +170,7 @@ main {
 }
 
 .suggestions li:hover {
-  background: #23273580;
+  background: #2d325280;
 }
 
 .suggestions img {
@@ -215,11 +232,47 @@ main {
   display: none;
 }
 
+.trending-wrap {
+  position: relative;
+}
+
+.trending-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+}
+
+.trending-arrow:hover {
+  border-color: var(--accent);
+}
+
+.trending-arrow-left {
+  left: -6px;
+}
+
+.trending-arrow-right {
+  right: -6px;
+}
+
 .trending-grid {
   display: flex;
   gap: 0.9rem;
   overflow-x: auto;
   padding-bottom: 0.5rem;
+  scrollbar-width: thin;
 }
 
 .trending-grid::-webkit-scrollbar {
@@ -303,7 +356,7 @@ main {
 .vpn-callout {
   margin-top: 1.5rem;
   padding: 1.1rem 1.25rem;
-  background: #23394140;
+  background: rgba(92, 194, 184, 0.12);
   border: 1px solid var(--accent-alt);
   border-radius: 10px;
   font-size: 0.95rem;
