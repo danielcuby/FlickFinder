@@ -106,6 +106,21 @@ main.wide {
   cursor: pointer;
 }
 
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.logo-icon {
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.logo-play {
+  fill: var(--accent);
+}
+
 .back-link {
   display: inline-block;
   background: none;
