@@ -5,6 +5,7 @@ const resultEl = document.getElementById('result');
 const trendingSection = document.getElementById('trending');
 const trendingGrid = document.getElementById('trending-grid');
 const posterWall = document.getElementById('poster-wall');
+const mainEl = document.querySelector('main');
 
 let debounceTimer;
 
@@ -15,6 +16,7 @@ function resetHome() {
   resultEl.classList.add('hidden');
   resultEl.innerHTML = '';
   trendingSection.classList.remove('hidden');
+  mainEl.classList.remove('wide');
 }
 
 document.getElementById('logo').addEventListener('click', resetHome);
@@ -23,19 +25,17 @@ function backLinkHtml() {
   return `<button type="button" class="back-link">← Back to search</button>`;
 }
 
-function resultHeaderHtml(item, certification) {
+function resultLeftHtml(item, certification) {
   const badges = [];
   if (item.rating) badges.push(`<span class="badge">★ ${item.rating}</span>`);
   if (certification) badges.push(`<span class="badge">${certification}</span>`);
 
   return `
-    <div class="result-header">
-      ${item.poster ? `<img src="${item.poster}" class="result-poster" alt="" />` : ''}
-      <div class="result-info">
-        <h2>${item.title}</h2>
-        ${badges.length ? `<div class="result-meta">${badges.join('')}</div>` : ''}
-        ${item.overview ? `<p class="result-overview">${item.overview}</p>` : ''}
-      </div>
+    <div class="result-left">
+      ${item.poster ? `<img src="${item.poster}" class="result-poster-large" alt="" />` : ''}
+      <h2>${item.title}</h2>
+      ${badges.length ? `<div class="result-meta">${badges.join('')}</div>` : ''}
+      ${item.overview ? `<p class="result-overview">${item.overview}</p>` : ''}
     </div>
   `;
 }
@@ -93,10 +93,13 @@ async function selectTitle(item) {
   suggestionsEl.classList.add('hidden');
   trendingSection.classList.add('hidden');
   resultEl.classList.remove('hidden');
+  mainEl.classList.add('wide');
   resultEl.innerHTML = `
     ${backLinkHtml()}
-    ${resultHeaderHtml(item)}
-    <p class="tagline">Checking where it's streaming…</p>
+    <div class="result-body">
+      ${resultLeftHtml(item)}
+      <div class="result-right"><p class="tagline">Checking where it's streaming…</p></div>
+    </div>
   `;
   bindBackLink();
 
@@ -107,8 +110,10 @@ async function selectTitle(item) {
   } catch (err) {
     resultEl.innerHTML = `
       ${backLinkHtml()}
-      ${resultHeaderHtml(item)}
-      <p class="tagline">Couldn't load streaming info. Try again.</p>
+      <div class="result-body">
+        ${resultLeftHtml(item)}
+        <div class="result-right"><p class="tagline">Couldn't load streaming info. Try again.</p></div>
+      </div>
     `;
     bindBackLink();
   }
@@ -123,22 +128,38 @@ function renderResult(item, data) {
       if (p.count === 0) {
         return `
           <div class="platform unavailable">
-            <span class="platform-name">${p.name}</span>
-            <span class="platform-countries">Not available</span>
+            <div class="platform-top">
+              <span class="platform-name">${p.name}</span>
+              <span class="platform-count">Not available</span>
+            </div>
           </div>
         `;
       }
 
       const isAll = p.count === checkedCount;
       const summary = isAll ? 'Available in all regions' : `Available in ${p.count} of ${checkedCount} regions`;
-      const listId = `countries-${idx}`;
+      const mainTags = (p.mainCountries || []).map((c) => `<span class="region-tag">${c}</span>`).join('');
+      const otherCountries = p.otherCountries || [];
+      const moreId = `more-${idx}`;
+
+      const seeMore = otherCountries.length
+        ? `<button type="button" class="see-more" data-target="${moreId}">+${otherCountries.length} more</button>`
+        : '';
+      const moreList = otherCountries.length
+        ? `<div class="more-regions hidden" id="${moreId}">${otherCountries
+            .map((c) => `<span class="region-tag">${c}</span>`)
+            .join('')}</div>`
+        : '';
 
       return `
-        <div class="platform expandable" data-target="${listId}">
-          <span class="platform-name">${p.name}</span>
-          <span class="platform-countries">${summary} ▾</span>
+        <div class="platform">
+          <div class="platform-top">
+            <span class="platform-name">${p.name}</span>
+            <span class="platform-count">${summary}</span>
+          </div>
+          <div class="platform-regions">${mainTags}${seeMore}</div>
+          ${moreList}
         </div>
-        <div class="country-list hidden" id="${listId}">${p.countries.join(', ')}</div>
       `;
     })
     .join('');
@@ -147,21 +168,24 @@ function renderResult(item, data) {
 
   resultEl.innerHTML = `
     ${backLinkHtml()}
-    ${resultHeaderHtml(item, data.certification)}
-    ${rows}
-    ${data.hadErrors ? `<p class="note">Couldn't check a few regions just now — results may be incomplete.</p>` : ''}
-    ${
-      anyAvailable
-        ? `<div class="vpn-callout">Not seeing it in your country? <strong>ZoogVPN</strong> can get you into one that has it.</div>`
-        : `<div class="vpn-callout"><strong>Not currently streaming</strong> in any of the regions we checked. A VPN can get you into one where it's live — try ZoogVPN.</div>`
-    }
+    <div class="result-body">
+      ${resultLeftHtml(item, data.certification)}
+      <div class="result-right">
+        ${rows}
+        ${data.hadErrors ? `<p class="note">Couldn't check a few regions just now — results may be incomplete.</p>` : ''}
+        ${
+          anyAvailable
+            ? `<div class="vpn-callout">Not seeing it in your country? <strong>ZoogVPN</strong> can get you into one that has it.</div>`
+            : `<div class="vpn-callout"><strong>Not currently streaming</strong> in any of the regions we checked. A VPN can get you into one where it's live — try ZoogVPN.</div>`
+        }
+      </div>
+    </div>
   `;
   bindBackLink();
 
-  resultEl.querySelectorAll('.platform.expandable').forEach((row) => {
-    row.addEventListener('click', () => {
-      const target = document.getElementById(row.dataset.target);
-      target.classList.toggle('hidden');
+  resultEl.querySelectorAll('.see-more').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.getElementById(btn.dataset.target).classList.toggle('hidden');
     });
   });
 }
