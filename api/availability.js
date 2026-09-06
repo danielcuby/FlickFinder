@@ -1,14 +1,45 @@
-// In-memory cache. This resets whenever the serverless function cold-starts
-// and isn't shared across regions/instances, so it's a starting point, not
-// the real fix for a traffic spike -- see README for moving this to
-// Vercel KV or Upstash Redis.
+// TMDB's watch/providers endpoint (powered by JustWatch) returns every
+// country's data in a single call, so this replaces the old per-country
+// RapidAPI lookups entirely -- no daily request quota to manage.
 const cache = new Map();
 const CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24 hours
 
-// Shortlist of countries checked per title. Keeping this list short is what
-// keeps a single search inside the Streaming Availability API's free-tier
-// limits. Expand it once you're on a paid tier or want deeper coverage.
-const COUNTRIES = ['us', 'gb', 'ca', 'au', 'de', 'fr', 'it', 'es', 'nl', 'jp', 'in', 'br', 'mx'];
+// Full country names for display, falling back to the raw code if TMDB
+// returns one we don't have a label for.
+const COUNTRY_NAMES = {
+  AE: 'United Arab Emirates', AR: 'Argentina', AT: 'Austria', AU: 'Australia',
+  AZ: 'Azerbaijan', BE: 'Belgium', BG: 'Bulgaria', BR: 'Brazil', CA: 'Canada',
+  CH: 'Switzerland', CL: 'Chile', CO: 'Colombia', CY: 'Cyprus', CZ: 'Czech Republic',
+  DE: 'Germany', DK: 'Denmark', EC: 'Ecuador', EE: 'Estonia', ES: 'Spain',
+  FI: 'Finland', FR: 'France', GB: 'United Kingdom', GR: 'Greece', HK: 'Hong Kong',
+  HR: 'Croatia', HU: 'Hungary', ID: 'Indonesia', IE: 'Ireland', IL: 'Israel',
+  IN: 'India', IS: 'Iceland', IT: 'Italy', JP: 'Japan', KR: 'South Korea',
+  LT: 'Lithuania', MD: 'Moldova', MK: 'North Macedonia', MX: 'Mexico', MY: 'Malaysia',
+  NL: 'Netherlands', NO: 'Norway', NZ: 'New Zealand', PA: 'Panama', PE: 'Peru',
+  PH: 'Philippines', PL: 'Poland', PT: 'Portugal', RO: 'Romania', RS: 'Serbia',
+  RU: 'Russia', SE: 'Sweden', SG: 'Singapore', SI: 'Slovenia', TH: 'Thailand',
+  TR: 'Turkey', UA: 'Ukraine', US: 'United States', VN: 'Vietnam', ZA: 'South Africa',
+};
+
+// Always shown, matched by substring against whatever name JustWatch
+// returns for that country (naming varies slightly by region, e.g.
+// "Amazon Prime Video" vs "Prime Video").
+const MAIN_PLATFORMS = [
+  { id: 'netflix', name: 'Netflix', match: ['netflix'] },
+  { id: 'prime', name: 'Prime Video', match: ['prime video', 'amazon prime'] },
+  { id: 'disney', name: 'Disney+', match: ['disney'] },
+  { id: 'max', name: 'Max', match: ['max', 'hbo'] },
+  { id: 'apple', name: 'Apple TV', match: ['apple tv'] },
+  { id: 'hulu', name: 'Hulu', match: ['hulu'] },
+  { id: 'peacock', name: 'Peacock', match: ['peacock'] },
+  { id: 'paramount', name: 'Paramount+', match: ['paramount'] },
+  { id: 'starz', name: 'Starz', match: ['starz'] },
+];
+
+function matchMainPlatform(providerName) {
+  const lower = providerName.toLowerCase();
+  return MAIN_PLATFORMS.find((p) => p.match.some((m) => lower.includes(m)));
+}
 
 module.exports = async (req, res) => {
   const { tmdbId, type } = req.query;
@@ -17,54 +48,63 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const apiKey = process.env.RAPIDAPI_KEY;
-  const host = 'streaming-availability.p.rapidapi.com';
+  const cacheKey = `${type}-${tmdbId}`;
+  const cached = cache.get(cacheKey);
+  if (cached && Date.now() - cached.time < CACHE_TTL_MS) {
+    res.status(200).json(cached.data);
+    return;
+  }
 
-  const lookups = COUNTRIES.map(async (country) => {
-    const cacheKey = `${type}-${tmdbId}-${country}`;
-    const cached = cache.get(cacheKey);
-    if (cached && Date.now() - cached.time < CACHE_TTL_MS) {
-      return { country, options: cached.options };
+  const apiKey = process.env.TMDB_API_KEY;
+  const mediaPath = type === 'tv' ? 'tv' : 'movie';
+  const url = `https://api.themoviedb.org/3/${mediaPath}/${tmdbId}/watch/providers?api_key=${apiKey}`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error(`TMDB watch/providers error for ${type}/${tmdbId}: ${response.status}`);
+      res.status(200).json({ platforms: [], checkedCount: 0, hadErrors: true });
+      return;
     }
 
-    // The API needs the title type baked into the id (movie/1396 or
-    // tv/1396) because TMDB reuses the same numeric id across movies and
-    // TV shows -- a bare id is ambiguous.
-    const url = `https://${host}/shows/${type}/${tmdbId}?country=${country}`;
+    const data = await response.json();
+    const results = data.results || {};
+    const countryCodes = Object.keys(results);
 
-    try {
-      const response = await fetch(url, {
-        headers: {
-          'X-RapidAPI-Key': apiKey,
-          'X-RapidAPI-Host': host,
-        },
+    // id -> { name, countries: Set }
+    const byPlatform = {};
+    countryCodes.forEach((country) => {
+      const flatrate = results[country].flatrate || [];
+      flatrate.forEach((provider) => {
+        const mainMatch = matchMainPlatform(provider.provider_name);
+        const key = mainMatch ? mainMatch.id : `other-${provider.provider_id}`;
+        const name = mainMatch ? mainMatch.name : provider.provider_name;
+        if (!byPlatform[key]) byPlatform[key] = { name, countries: new Set() };
+        byPlatform[key].countries.add(country);
       });
-      if (!response.ok) {
-        console.error(`Streaming Availability API error for ${type}/${tmdbId} (${country}): ${response.status} ${await response.text()}`);
-        return { country, options: [] };
-      }
-      const data = await response.json();
-      const options = (data.streamingOptions && data.streamingOptions[country]) || [];
-      cache.set(cacheKey, { time: Date.now(), options });
-      return { country, options };
-    } catch (err) {
-      console.error(`Streaming Availability API request failed for ${type}/${tmdbId} (${country}):`, err);
-      return { country, options: [] };
-    }
-  });
-
-  const results = await Promise.all(lookups);
-
-  // Reshape from "per country" to "per platform": platform name -> list of
-  // countries it's available in.
-  const byPlatform = {};
-  results.forEach(({ country, options }) => {
-    options.forEach((opt) => {
-      const platform = (opt.service && (opt.service.name || opt.service.id)) || 'Unknown';
-      if (!byPlatform[platform]) byPlatform[platform] = [];
-      if (!byPlatform[platform].includes(country)) byPlatform[platform].push(country);
     });
-  });
 
-  res.status(200).json({ platforms: byPlatform, checkedCountries: COUNTRIES });
+    MAIN_PLATFORMS.forEach(({ id, name }) => {
+      if (!byPlatform[id]) byPlatform[id] = { name, countries: new Set() };
+    });
+
+    const platforms = Object.values(byPlatform)
+      .map((p) => ({
+        name: p.name,
+        count: p.countries.size,
+        countries: Array.from(p.countries).map((code) => COUNTRY_NAMES[code] || code).sort(),
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    // checkedCount here means "regions with any known listing for this
+    // title" (what JustWatch actually returned), not every country in the
+    // world -- so "available in all regions" means all regions this title
+    // has any presence in, not literally everywhere on Earth.
+    const responseBody = { platforms, checkedCount: countryCodes.length, hadErrors: false };
+    cache.set(cacheKey, { time: Date.now(), data: responseBody });
+    res.status(200).json(responseBody);
+  } catch (err) {
+    console.error(`TMDB watch/providers request failed for ${type}/${tmdbId}:`, err);
+    res.status(200).json({ platforms: [], checkedCount: 0, hadErrors: true });
+  }
 };
