@@ -232,7 +232,8 @@ main.wide {
   padding: 0.15rem 0.55rem;
   border: 1px solid var(--border);
   border-radius: 999px;
-  color: var(--text-muted);
+  background: #ece4d4;
+  color: var(--text);
 }
 
 .result-overview {
@@ -296,9 +297,9 @@ main.wide {
   font-size: 0.75rem;
   padding: 0.15rem 0.55rem;
   border-radius: 999px;
-  background: var(--bg);
+  background: #ece4d4;
   border: 1px solid var(--border);
-  color: var(--text-muted);
+  color: var(--text);
 }
 
 .see-more {
