@@ -23,6 +23,23 @@ function backLinkHtml() {
   return `<button type="button" class="back-link">← Back to search</button>`;
 }
 
+function resultHeaderHtml(item, certification) {
+  const badges = [];
+  if (item.rating) badges.push(`<span class="badge">★ ${item.rating}</span>`);
+  if (certification) badges.push(`<span class="badge">${certification}</span>`);
+
+  return `
+    <div class="result-header">
+      ${item.poster ? `<img src="${item.poster}" class="result-poster" alt="" />` : ''}
+      <div class="result-info">
+        <h2>${item.title}</h2>
+        ${badges.length ? `<div class="result-meta">${badges.join('')}</div>` : ''}
+        ${item.overview ? `<p class="result-overview">${item.overview}</p>` : ''}
+      </div>
+    </div>
+  `;
+}
+
 function bindBackLink() {
   const back = resultEl.querySelector('.back-link');
   if (back) back.addEventListener('click', resetHome);
@@ -78,10 +95,7 @@ async function selectTitle(item) {
   resultEl.classList.remove('hidden');
   resultEl.innerHTML = `
     ${backLinkHtml()}
-    <div class="result-header">
-      ${item.poster ? `<img src="${item.poster}" class="result-poster" alt="" />` : ''}
-      <h2>${item.title}</h2>
-    </div>
+    ${resultHeaderHtml(item)}
     <p class="tagline">Checking where it's streaming…</p>
   `;
   bindBackLink();
@@ -93,10 +107,7 @@ async function selectTitle(item) {
   } catch (err) {
     resultEl.innerHTML = `
       ${backLinkHtml()}
-      <div class="result-header">
-        ${item.poster ? `<img src="${item.poster}" class="result-poster" alt="" />` : ''}
-        <h2>${item.title}</h2>
-      </div>
+      ${resultHeaderHtml(item)}
       <p class="tagline">Couldn't load streaming info. Try again.</p>
     `;
     bindBackLink();
@@ -136,10 +147,7 @@ function renderResult(item, data) {
 
   resultEl.innerHTML = `
     ${backLinkHtml()}
-    <div class="result-header">
-      ${item.poster ? `<img src="${item.poster}" class="result-poster" alt="" />` : ''}
-      <h2>${item.title}</h2>
-    </div>
+    ${resultHeaderHtml(item, data.certification)}
     ${rows}
     ${data.hadErrors ? `<p class="note">Couldn't check a few regions just now — results may be incomplete.</p>` : ''}
     ${
