@@ -137,6 +137,32 @@ main {
   text-align: right;
 }
 
+.platform.expandable {
+  cursor: pointer;
+}
+
+.platform.unavailable .platform-name,
+.platform.unavailable .platform-countries {
+  color: var(--text-muted);
+}
+
+.country-list {
+  padding: 0 0 0.9rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.country-list.hidden {
+  display: none;
+}
+
+.note {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin-top: 0.75rem;
+}
+
 .vpn-callout {
   margin-top: 1.5rem;
   padding: 1.1rem 1.25rem;
@@ -149,4 +175,15 @@ main {
 
 .vpn-callout strong {
   color: var(--accent-alt);
+}
+
+.attribution {
+  margin-top: 3rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.attribution a {
+  color: var(--text-muted);
 }
