@@ -105,7 +105,7 @@ main {
   z-index: 2;
   max-width: 640px;
   margin: 0 auto;
-  padding: 6rem 1.5rem 4rem;
+  padding: 6rem 1.5rem 7.5rem;
   transition: max-width 0.2s ease;
 }
 
@@ -460,8 +460,47 @@ main.wide {
   margin-top: 0.75rem;
 }
 
-.vpn-section {
+.vpn-sticky {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  padding: 0.6rem 1rem;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+}
+
+.vpn-sticky .vpn-banner {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0.65rem 1.1rem;
+}
+
+.rentbuy-section {
   margin-top: 1.5rem;
+}
+
+.rentbuy-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.rentbuy-link {
+  display: inline-block;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: border-color 0.15s ease;
+}
+
+.rentbuy-link:hover {
+  border-color: var(--accent);
 }
 
 .vpn-lead {
@@ -508,14 +547,16 @@ main.wide {
 }
 
 .vpn-disclosure {
-  font-size: 0.7rem;
+  max-width: 700px;
+  margin: 0.4rem auto 0;
+  text-align: center;
+  font-size: 0.68rem;
   color: var(--text-muted);
-  margin: 0.5rem 0 0;
 }
 
 .attribution {
   position: fixed;
-  bottom: 0.75rem;
+  bottom: 4.5rem;
   right: 1rem;
   z-index: 2;
   text-align: right;
