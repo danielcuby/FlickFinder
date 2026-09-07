@@ -6,6 +6,7 @@ const trendingSection = document.getElementById('trending');
 const trendingGrid = document.getElementById('trending-grid');
 const posterWall = document.getElementById('poster-wall');
 const mainEl = document.querySelector('main');
+const vpnSticky = document.getElementById('vpn-sticky');
 
 let debounceTimer;
 
@@ -22,14 +23,9 @@ const VPN_MESSAGES = [
 
 let vpnMessageInterval = null;
 
-function stopVpnMessageRotation() {
-  clearInterval(vpnMessageInterval);
-  vpnMessageInterval = null;
-}
-
 function startVpnMessageRotation() {
-  stopVpnMessageRotation();
-  const el = resultEl.querySelector('.vpn-banner-message');
+  clearInterval(vpnMessageInterval);
+  const el = vpnSticky.querySelector('.vpn-banner-message');
   if (!el) return;
   let i = 0;
   vpnMessageInterval = setInterval(() => {
@@ -42,16 +38,15 @@ function startVpnMessageRotation() {
   }, 3500);
 }
 
-function vpnBannerHtml(leadIn) {
-  return `
-    <div class="vpn-section">
-      <p class="vpn-lead">${leadIn}</p>
-      <a class="vpn-banner" href="${ZOOGVPN_URL}" target="_blank" rel="noopener sponsored">
-        <span class="vpn-banner-message">${VPN_MESSAGES[0]}</span>
-        <span class="vpn-banner-cta">Get ZoogVPN →</span>
-      </a>
-      <p class="vpn-disclosure">FlickFinder may earn a commission if you sign up through this link.</p>
-    </div>
+// Renders once and stays on screen permanently -- not tied to search
+// results, so it's visible whether or not anything's been searched yet.
+function renderVpnSticky() {
+  vpnSticky.innerHTML = `
+    <a class="vpn-banner" href="${ZOOGVPN_URL}" target="_blank" rel="noopener sponsored">
+      <span class="vpn-banner-message">${VPN_MESSAGES[0]}</span>
+      <span class="vpn-banner-cta">Get ZoogVPN →</span>
+    </a>
+    <p class="vpn-disclosure">FlickFinder may earn a commission if you sign up through this link.</p>
   `;
 }
 
@@ -63,13 +58,41 @@ function resetHome() {
   resultEl.innerHTML = '';
   trendingSection.classList.remove('hidden');
   mainEl.classList.remove('wide');
-  stopVpnMessageRotation();
 }
 
 document.getElementById('logo').addEventListener('click', resetHome);
 
 function backLinkHtml() {
   return `<button type="button" class="back-link">← Back to search</button>`;
+}
+
+// TODO: replace with your real Amazon Associates tracking ID once
+// you're approved -- until then this link works but won't earn commission.
+// Note: Amazon closes Associates accounts that don't get 3 qualifying
+// sales within 180 days of approval, so it's worth waiting to sign up
+// until the site has some real traffic rather than applying today.
+const AMAZON_ASSOCIATE_TAG = 'youraffiliateid-20';
+
+function rentBuyHtml(item, rentBuy) {
+  if (!rentBuy || !rentBuy.length) return '';
+
+  const links = rentBuy
+    .map(({ id, name }) => {
+      if (id === 'amazon') {
+        const url = `https://www.amazon.com/s?k=${encodeURIComponent(item.title)}&i=instant-video&tag=${AMAZON_ASSOCIATE_TAG}`;
+        return `<a class="rentbuy-link" href="${url}" target="_blank" rel="noopener sponsored">Rent or buy on ${name}</a>`;
+      }
+      const url = `https://tv.apple.com/search?term=${encodeURIComponent(item.title)}`;
+      return `<a class="rentbuy-link" href="${url}" target="_blank" rel="noopener">Rent or buy on ${name}</a>`;
+    })
+    .join('');
+
+  return `
+    <div class="rentbuy-section">
+      <p class="vpn-lead">Not on a subscription you have? You can also:</p>
+      <div class="rentbuy-links">${links}</div>
+    </div>
+  `;
 }
 
 function resultLeftHtml(item, certification) {
@@ -211,8 +234,6 @@ function renderResult(item, data) {
     })
     .join('');
 
-  const anyAvailable = platforms.some((p) => p.count > 0);
-
   resultEl.innerHTML = `
     ${backLinkHtml()}
     <div class="result-body">
@@ -220,16 +241,11 @@ function renderResult(item, data) {
       <div class="result-right">
         ${rows}
         ${data.hadErrors ? `<p class="note">Couldn't check a few regions just now — results may be incomplete.</p>` : ''}
-        ${
-          anyAvailable
-            ? vpnBannerHtml('Not seeing it in your country?')
-            : vpnBannerHtml('Not currently streaming in any of the regions we checked.')
-        }
+        ${rentBuyHtml(item, data.rentBuy)}
       </div>
     </div>
   `;
   bindBackLink();
-  startVpnMessageRotation();
 
   resultEl.querySelectorAll('.see-more').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -298,6 +314,8 @@ function renderPosterWall(results) {
 }
 
 loadTrending();
+renderVpnSticky();
+startVpnMessageRotation();
 
 document.getElementById('trending-prev').addEventListener('click', () => {
   trendingGrid.scrollBy({ left: -320, behavior: 'smooth' });
