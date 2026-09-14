@@ -48,6 +48,10 @@ function renderVpnSticky() {
     </a>
     <p class="vpn-disclosure">FlickFinder may earn a commission if you sign up through this link.</p>
   `;
+  const link = vpnSticky.querySelector('.vpn-banner');
+  if (link && typeof gtag === 'function') {
+    link.addEventListener('click', () => gtag('event', 'affiliate_click', { link_type: 'zoogvpn' }));
+  }
 }
 
 function resetHome() {
@@ -80,10 +84,10 @@ function rentBuyHtml(item, rentBuy) {
     .map(({ id, name }) => {
       if (id === 'amazon') {
         const url = `https://www.amazon.com/s?k=${encodeURIComponent(item.title)}&i=instant-video&tag=${AMAZON_ASSOCIATE_TAG}`;
-        return `<a class="rentbuy-link" href="${url}" target="_blank" rel="noopener sponsored">Rent or buy on ${name}</a>`;
+        return `<a class="rentbuy-link" data-provider="amazon" href="${url}" target="_blank" rel="noopener sponsored">Rent or buy on ${name}</a>`;
       }
       const url = `https://tv.apple.com/search?term=${encodeURIComponent(item.title)}`;
-      return `<a class="rentbuy-link" href="${url}" target="_blank" rel="noopener">Rent or buy on ${name}</a>`;
+      return `<a class="rentbuy-link" data-provider="apple_tv" href="${url}" target="_blank" rel="noopener">Rent or buy on ${name}</a>`;
     })
     .join('');
 
@@ -250,6 +254,12 @@ function renderResult(item, data) {
   resultEl.querySelectorAll('.see-more').forEach((btn) => {
     btn.addEventListener('click', () => {
       document.getElementById(btn.dataset.target).classList.toggle('hidden');
+    });
+  });
+
+  resultEl.querySelectorAll('.rentbuy-link').forEach((link) => {
+    link.addEventListener('click', () => {
+      if (typeof gtag === 'function') gtag('event', 'affiliate_click', { link_type: link.dataset.provider });
     });
   });
 }
