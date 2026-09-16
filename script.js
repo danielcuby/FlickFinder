@@ -193,11 +193,8 @@ async function selectTitle(item) {
   }
 }
 
-function renderResult(item, data) {
-  const platforms = data.platforms || [];
-  const checkedCount = data.checkedCount || 0;
-
-  const rows = platforms
+function platformRowsHtml(platformList, checkedCount, idPrefix) {
+  return platformList
     .map((p, idx) => {
       if (p.count === 0) {
         return `
@@ -214,7 +211,7 @@ function renderResult(item, data) {
       const summary = isAll ? 'Available in all regions' : `Available in ${p.count} of ${checkedCount} regions`;
       const mainTags = (p.mainCountries || []).map((c) => `<span class="region-tag">${c}</span>`).join('');
       const otherCountries = p.otherCountries || [];
-      const moreId = `more-${idx}`;
+      const moreId = `${idPrefix}-more-${idx}`;
 
       const seeMore = otherCountries.length
         ? `<button type="button" class="see-more" data-target="${moreId}">+${otherCountries.length} more</button>`
@@ -237,6 +234,22 @@ function renderResult(item, data) {
       `;
     })
     .join('');
+}
+
+function renderResult(item, data) {
+  const platforms = data.platforms || [];
+  const regionalPlatforms = data.regionalPlatforms || [];
+  const checkedCount = data.checkedCount || 0;
+
+  const rows = platformRowsHtml(platforms, checkedCount, 'main');
+  const regionalRows = regionalPlatforms.length
+    ? `
+      <div class="regional-section">
+        <h3 class="regional-heading">Also available regionally</h3>
+        ${platformRowsHtml(regionalPlatforms, checkedCount, 'regional')}
+      </div>
+    `
+    : '';
 
   resultEl.innerHTML = `
     ${backLinkHtml()}
@@ -244,6 +257,7 @@ function renderResult(item, data) {
       ${resultLeftHtml(item, data.certification)}
       <div class="result-right">
         ${rows}
+        ${regionalRows}
         ${data.hadErrors ? `<p class="note">Couldn't check a few regions just now — results may be incomplete.</p>` : ''}
         ${rentBuyHtml(item, data.rentBuy)}
       </div>
