@@ -358,7 +358,19 @@ main.wide {
 .more-regions.hidden {
   display: none;
 }
+.regional-section {
+  margin-top: 1rem;
+}
 
+.regional-heading {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin: 1rem 0 0.25rem;
+}
 .trending {
   margin-top: 3rem;
 }
