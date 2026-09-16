@@ -157,47 +157,81 @@ module.exports = async (req, res) => {
     const results = data.results || {};
     const countryCodes = Object.keys(results);
 
-    // Only track the main platforms — anything else JustWatch returns
-    // (regional or niche services) is dropped rather than shown, so the
-    // list stays to well-known names and popular platforms never get
-    // outranked by an obscure one with wider incidental coverage.
+    // Main platforms are always shown, even at zero availability, so
+    // popular names stay recognizable. Regional/country-specific ones
+    // (Stan, Hotstar, Globoplay, etc.) are tracked separately and only
+    // ever shown when a title is genuinely on them -- no padded "not
+    // available" row for every regional service on Earth.
     const byPlatform = {};
+    const regionalByPlatform = {};
+    // Separately, note whether Amazon or Apple TV offer this to rent/buy
+    // anywhere -- a second, transactional way to earn from a title even
+    // when it's not on a subscription service.
+    const rentBuySeen = { amazon: false, apple: false };
     countryCodes.forEach((country) => {
       const flatrate = results[country].flatrate || [];
       flatrate.forEach((provider) => {
         const mainMatch = matchMainPlatform(provider.provider_name);
-        if (!mainMatch) return;
-        if (!byPlatform[mainMatch.id]) byPlatform[mainMatch.id] = { name: mainMatch.name, countries: new Set() };
-        byPlatform[mainMatch.id].countries.add(country);
+        if (mainMatch) {
+          if (!byPlatform[mainMatch.id]) byPlatform[mainMatch.id] = { name: mainMatch.name, countries: new Set() };
+          byPlatform[mainMatch.id].countries.add(country);
+          return;
+        }
+        const key = `regional-${provider.provider_id}`;
+        if (!regionalByPlatform[key]) regionalByPlatform[key] = { name: provider.provider_name, countries: new Set() };
+        regionalByPlatform[key].countries.add(country);
+      });
+
+      const rentBuy = [...(results[country].rent || []), ...(results[country].buy || [])];
+      rentBuy.forEach((provider) => {
+        const lower = provider.provider_name.toLowerCase();
+        if (lower.includes('amazon') || lower.includes('prime video')) rentBuySeen.amazon = true;
+        if (lower.includes('apple')) rentBuySeen.apple = true;
       });
     });
+
+    const rentBuy = [];
+    if (rentBuySeen.amazon) rentBuy.push({ id: 'amazon', name: 'Amazon Video' });
+    if (rentBuySeen.apple) rentBuy.push({ id: 'apple', name: 'Apple TV' });
 
     MAIN_PLATFORMS.forEach(({ id, name }) => {
       if (!byPlatform[id]) byPlatform[id] = { name, countries: new Set() };
     });
 
-    const platforms = Object.values(byPlatform)
-      .map((p) => {
-        const allCodes = Array.from(p.countries);
-        const mainCountries = PRIORITY_CODES.filter((code) => p.countries.has(code)).map(displayName);
-        const otherCountries = allCodes
-          .filter((code) => !PRIORITY_CODES.includes(code))
-          .map(displayName)
-          .sort();
-        return {
-          name: p.name,
-          count: allCodes.length,
-          mainCountries,
-          otherCountries,
-        };
-      })
-      .sort((a, b) => b.count - a.count);
+    function toPlatformList(source) {
+      return Object.values(source)
+        .map((p) => {
+          const allCodes = Array.from(p.countries);
+          const mainCountries = PRIORITY_CODES.filter((code) => p.countries.has(code)).map(displayName);
+          const otherCountries = allCodes
+            .filter((code) => !PRIORITY_CODES.includes(code))
+            .map(displayName)
+            .sort();
+          return {
+            name: p.name,
+            count: allCodes.length,
+            mainCountries,
+            otherCountries,
+          };
+        })
+        .sort((a, b) => b.count - a.count);
+    }
+
+    const platforms = toPlatformList(byPlatform);
+    const regionalPlatforms = toPlatformList(regionalByPlatform);
 
     // checkedCount here means "regions with any known listing for this
     // title" (what JustWatch actually returned), not every country in the
     // world -- so "available in all regions" means all regions this title
     // has any presence in, not literally everywhere on Earth.
-    const responseBody = { platforms, checkedCount: countryCodes.length, hadErrors: false, certification };
+    const responseBody = {
+      platforms,
+      regionalPlatforms,
+      checkedCount: countryCodes.length,
+      hadErrors: false,
+      certification,
+      rentBuy,
+    };
     cache.set(cacheKey, { time: Date.now(), data: responseBody });
     res.status(200).json(responseBody);
   } catch (err) {
