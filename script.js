@@ -10,10 +10,8 @@ const vpnSticky = document.getElementById('vpn-sticky');
 
 let debounceTimer;
 
-// TODO: replace with your real ZoogVPN affiliate/tracking link once you
-// have it from the meeting -- this placeholder just points at their
-// homepage so nothing is wired to a real commission yet.
-const ZOOGVPN_URL = 'https://zoogvpn.com';
+// Real ZoogVPN affiliate/tracking link.
+const ZOOGVPN_URL = 'https://zoogvpn.com/?utm_source=zoog_affiliate&utm_medium=revshare&utm_campaign=affx03boa09okh2n&a_aid=x03boa09okh2n';
 
 const VPN_MESSAGES = [
   'Unlock this and thousands of other titles',
