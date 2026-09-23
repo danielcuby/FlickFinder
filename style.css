@@ -308,13 +308,26 @@ main.wide {
 
 .platform-name {
   font-weight: 500;
+}
+
+span.platform-name {
   color: inherit;
+}
+
+a.platform-name {
+  color: var(--accent);
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
 }
 
 a.platform-name:hover {
-  color: var(--accent);
   text-decoration: underline;
+}
+
+.visit-icon {
+  font-size: 0.75em;
 }
 
 .platform-count {
