@@ -182,7 +182,7 @@ function platformRowsHtml(platformList, checkedCount, idPrefix) {
       const otherCountries = p.otherCountries || [];
       const moreId = `${idPrefix}-more-${idx}`;
       const nameHtml = p.homepage
-        ? `<a class="platform-name" href="${p.homepage}" target="_blank" rel="noopener">${p.name}</a>`
+        ? `<a class="platform-name" href="${p.homepage}" target="_blank" rel="noopener">${p.name} <span class="visit-icon" aria-hidden="true">↗</span></a>`
         : `<span class="platform-name">${p.name}</span>`;
 
       const seeMore = otherCountries.length
