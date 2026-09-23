@@ -70,22 +70,50 @@ const PRIORITY_CODES = ['US', 'GB', 'CA'];
 
 // Always shown, matched by substring against whatever name JustWatch
 // returns for that country (naming varies slightly by region, e.g.
-// "Amazon Prime Video" vs "Prime Video").
+// "Amazon Prime Video" vs "Prime Video"). Each also carries its homepage
+// so an available platform's name can link straight there.
 const MAIN_PLATFORMS = [
-  { id: 'netflix', name: 'Netflix', match: ['netflix'] },
-  { id: 'prime', name: 'Prime Video', match: ['prime video', 'amazon prime'] },
-  { id: 'disney', name: 'Disney+', match: ['disney'] },
-  { id: 'max', name: 'Max', match: ['max', 'hbo'] },
-  { id: 'apple', name: 'Apple TV', match: ['apple tv'] },
-  { id: 'hulu', name: 'Hulu', match: ['hulu'] },
-  { id: 'peacock', name: 'Peacock', match: ['peacock'] },
-  { id: 'paramount', name: 'Paramount+', match: ['paramount'] },
-  { id: 'starz', name: 'Starz', match: ['starz'] },
+  { id: 'netflix', name: 'Netflix', match: ['netflix'], homepage: 'https://www.netflix.com' },
+  { id: 'prime', name: 'Prime Video', match: ['prime video', 'amazon prime'], homepage: 'https://www.primevideo.com' },
+  { id: 'disney', name: 'Disney+', match: ['disney'], homepage: 'https://www.disneyplus.com' },
+  { id: 'max', name: 'Max', match: ['max', 'hbo'], homepage: 'https://www.max.com' },
+  { id: 'apple', name: 'Apple TV', match: ['apple tv'], homepage: 'https://tv.apple.com' },
+  { id: 'hulu', name: 'Hulu', match: ['hulu'], homepage: 'https://www.hulu.com' },
+  { id: 'peacock', name: 'Peacock', match: ['peacock'], homepage: 'https://www.peacocktv.com' },
+  { id: 'paramount', name: 'Paramount+', match: ['paramount'], homepage: 'https://www.paramountplus.com' },
+  { id: 'starz', name: 'Starz', match: ['starz'], homepage: 'https://www.starz.com' },
 ];
 
 function matchMainPlatform(providerName) {
   const lower = providerName.toLowerCase();
   return MAIN_PLATFORMS.find((p) => p.match.some((m) => lower.includes(m)));
+}
+
+// Best-effort homepage lookup for the regional/country-specific platforms
+// that show up in the "Also available regionally" section. Anything not
+// matched here just shows as plain text -- no link -- rather than guessing.
+const REGIONAL_HOMEPAGES = [
+  { match: ['stan'], homepage: 'https://www.stan.com.au' },
+  { match: ['hotstar'], homepage: 'https://www.hotstar.com' },
+  { match: ['globoplay'], homepage: 'https://globoplay.globo.com' },
+  { match: ['iplayer'], homepage: 'https://www.bbc.co.uk/iplayer' },
+  { match: ['channel 4', 'all 4', 'all4'], homepage: 'https://www.channel4.com' },
+  { match: ['itvx', 'itv'], homepage: 'https://www.itv.com' },
+  { match: ['crave'], homepage: 'https://www.crave.ca' },
+  { match: ['now'], homepage: 'https://www.nowtv.com' },
+  { match: ['britbox'], homepage: 'https://www.britbox.com' },
+  { match: ['zee5'], homepage: 'https://www.zee5.com' },
+  { match: ['mubi'], homepage: 'https://mubi.com' },
+  { match: ['rakuten'], homepage: 'https://www.rakuten.tv' },
+  { match: ['skyshowtime'], homepage: 'https://www.skyshowtime.com' },
+  { match: ['viaplay'], homepage: 'https://www.viaplay.com' },
+  { match: ['crunchyroll'], homepage: 'https://www.crunchyroll.com' },
+];
+
+function matchRegionalHomepage(providerName) {
+  const lower = providerName.toLowerCase();
+  const found = REGIONAL_HOMEPAGES.find((p) => p.match.some((m) => lower.includes(m)));
+  return found ? found.homepage : null;
 }
 
 // Age rating lives on a different endpoint than watch/providers, and movies
@@ -149,7 +177,7 @@ module.exports = async (req, res) => {
 
     if (!response.ok) {
       console.error(`TMDB watch/providers error for ${type}/${tmdbId}: ${response.status}`);
-      res.status(200).json({ platforms: [], checkedCount: 0, hadErrors: true, certification });
+      res.status(200).json({ platforms: [], regionalPlatforms: [], checkedCount: 0, hadErrors: true, certification });
       return;
     }
 
@@ -164,38 +192,31 @@ module.exports = async (req, res) => {
     // available" row for every regional service on Earth.
     const byPlatform = {};
     const regionalByPlatform = {};
-    // Separately, note whether Amazon or Apple TV offer this to rent/buy
-    // anywhere -- a second, transactional way to earn from a title even
-    // when it's not on a subscription service.
-    const rentBuySeen = { amazon: false, apple: false };
     countryCodes.forEach((country) => {
       const flatrate = results[country].flatrate || [];
       flatrate.forEach((provider) => {
         const mainMatch = matchMainPlatform(provider.provider_name);
         if (mainMatch) {
-          if (!byPlatform[mainMatch.id]) byPlatform[mainMatch.id] = { name: mainMatch.name, countries: new Set() };
+          if (!byPlatform[mainMatch.id]) {
+            byPlatform[mainMatch.id] = { name: mainMatch.name, countries: new Set(), homepage: mainMatch.homepage };
+          }
           byPlatform[mainMatch.id].countries.add(country);
           return;
         }
         const key = `regional-${provider.provider_id}`;
-        if (!regionalByPlatform[key]) regionalByPlatform[key] = { name: provider.provider_name, countries: new Set() };
+        if (!regionalByPlatform[key]) {
+          regionalByPlatform[key] = {
+            name: provider.provider_name,
+            countries: new Set(),
+            homepage: matchRegionalHomepage(provider.provider_name),
+          };
+        }
         regionalByPlatform[key].countries.add(country);
-      });
-
-      const rentBuy = [...(results[country].rent || []), ...(results[country].buy || [])];
-      rentBuy.forEach((provider) => {
-        const lower = provider.provider_name.toLowerCase();
-        if (lower.includes('amazon') || lower.includes('prime video')) rentBuySeen.amazon = true;
-        if (lower.includes('apple')) rentBuySeen.apple = true;
       });
     });
 
-    const rentBuy = [];
-    if (rentBuySeen.amazon) rentBuy.push({ id: 'amazon', name: 'Amazon Video' });
-    if (rentBuySeen.apple) rentBuy.push({ id: 'apple', name: 'Apple TV' });
-
-    MAIN_PLATFORMS.forEach(({ id, name }) => {
-      if (!byPlatform[id]) byPlatform[id] = { name, countries: new Set() };
+    MAIN_PLATFORMS.forEach(({ id, name, homepage }) => {
+      if (!byPlatform[id]) byPlatform[id] = { name, countries: new Set(), homepage };
     });
 
     function toPlatformList(source) {
@@ -212,6 +233,7 @@ module.exports = async (req, res) => {
             count: allCodes.length,
             mainCountries,
             otherCountries,
+            homepage: p.homepage || null,
           };
         })
         .sort((a, b) => b.count - a.count);
@@ -230,12 +252,11 @@ module.exports = async (req, res) => {
       checkedCount: countryCodes.length,
       hadErrors: false,
       certification,
-      rentBuy,
     };
     cache.set(cacheKey, { time: Date.now(), data: responseBody });
     res.status(200).json(responseBody);
   } catch (err) {
     console.error(`TMDB watch/providers request failed for ${type}/${tmdbId}:`, err);
-    res.status(200).json({ platforms: [], checkedCount: 0, hadErrors: true, certification: null });
+    res.status(200).json({ platforms: [], regionalPlatforms: [], checkedCount: 0, hadErrors: true, certification: null });
   }
 };
