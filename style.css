@@ -306,28 +306,35 @@ main.wide {
   gap: 1rem;
 }
 
-.platform-name {
-  font-weight: 500;
+.platform-name-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
-span.platform-name {
+.platform-logo {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.platform-name {
+  font-weight: 500;
   color: inherit;
 }
 
-a.platform-name {
+.visit-link {
+  font-size: 0.75rem;
   color: var(--accent);
   text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
+  white-space: nowrap;
 }
 
-a.platform-name:hover {
+.visit-link:hover {
   text-decoration: underline;
-}
-
-.visit-icon {
-  font-size: 0.75em;
 }
 
 .platform-count {
