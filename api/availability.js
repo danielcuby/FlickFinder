@@ -195,12 +195,14 @@ module.exports = async (req, res) => {
     countryCodes.forEach((country) => {
       const flatrate = results[country].flatrate || [];
       flatrate.forEach((provider) => {
+        const logo = provider.logo_path ? `https://image.tmdb.org/t/p/w92${provider.logo_path}` : null;
         const mainMatch = matchMainPlatform(provider.provider_name);
         if (mainMatch) {
           if (!byPlatform[mainMatch.id]) {
-            byPlatform[mainMatch.id] = { name: mainMatch.name, countries: new Set(), homepage: mainMatch.homepage };
+            byPlatform[mainMatch.id] = { name: mainMatch.name, countries: new Set(), homepage: mainMatch.homepage, logo: null };
           }
           byPlatform[mainMatch.id].countries.add(country);
+          if (!byPlatform[mainMatch.id].logo && logo) byPlatform[mainMatch.id].logo = logo;
           return;
         }
         const key = `regional-${provider.provider_id}`;
@@ -209,6 +211,7 @@ module.exports = async (req, res) => {
             name: provider.provider_name,
             countries: new Set(),
             homepage: matchRegionalHomepage(provider.provider_name),
+            logo,
           };
         }
         regionalByPlatform[key].countries.add(country);
@@ -234,6 +237,7 @@ module.exports = async (req, res) => {
             mainCountries,
             otherCountries,
             homepage: p.homepage || null,
+            logo: p.logo || null,
           };
         })
         .sort((a, b) => b.count - a.count);
