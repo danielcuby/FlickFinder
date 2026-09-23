@@ -165,11 +165,16 @@ async function selectTitle(item) {
 function platformRowsHtml(platformList, checkedCount, idPrefix) {
   return platformList
     .map((p, idx) => {
+      const logoHtml = p.logo ? `<img class="platform-logo" src="${p.logo}" alt="" />` : '';
+
       if (p.count === 0) {
         return `
           <div class="platform unavailable">
             <div class="platform-top">
-              <span class="platform-name">${p.name}</span>
+              <div class="platform-name-group">
+                ${logoHtml}
+                <span class="platform-name">${p.name}</span>
+              </div>
               <span class="platform-count">Not available</span>
             </div>
           </div>
@@ -181,9 +186,9 @@ function platformRowsHtml(platformList, checkedCount, idPrefix) {
       const mainTags = (p.mainCountries || []).map((c) => `<span class="region-tag">${c}</span>`).join('');
       const otherCountries = p.otherCountries || [];
       const moreId = `${idPrefix}-more-${idx}`;
-      const nameHtml = p.homepage
-        ? `<a class="platform-name" href="${p.homepage}" target="_blank" rel="noopener">${p.name} <span class="visit-icon" aria-hidden="true">↗</span></a>`
-        : `<span class="platform-name">${p.name}</span>`;
+      const visitLink = p.homepage
+        ? `<a class="visit-link" href="${p.homepage}" target="_blank" rel="noopener">Visit site ↗</a>`
+        : '';
 
       const seeMore = otherCountries.length
         ? `<button type="button" class="see-more" data-target="${moreId}">+${otherCountries.length} more</button>`
@@ -197,7 +202,11 @@ function platformRowsHtml(platformList, checkedCount, idPrefix) {
       return `
         <div class="platform">
           <div class="platform-top">
-            ${nameHtml}
+            <div class="platform-name-group">
+              ${logoHtml}
+              <span class="platform-name">${p.name}</span>
+              ${visitLink}
+            </div>
             <span class="platform-count">${summary}</span>
           </div>
           <div class="platform-regions">${mainTags}${seeMore}</div>
