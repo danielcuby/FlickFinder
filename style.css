@@ -599,6 +599,15 @@ main.wide {
   flex-shrink: 0;
 }
 
+/* On narrow screens there isn't room for the contact card to overlap the
+   full-width sticky banner without covering it -- sit above it instead. */
+@media (max-width: 640px) {
+  .contact-us {
+    bottom: 4.75rem;
+    max-width: 190px;
+  }
+}
+
 .vpn-sticky {
   position: fixed;
   bottom: 0;
