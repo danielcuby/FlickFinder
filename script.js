@@ -68,35 +68,6 @@ function backLinkHtml() {
   return `<button type="button" class="back-link">← Back to search</button>`;
 }
 
-// TODO: replace with your real Amazon Associates tracking ID once
-// you're approved -- until then this link works but won't earn commission.
-// Note: Amazon closes Associates accounts that don't get 3 qualifying
-// sales within 180 days of approval, so it's worth waiting to sign up
-// until the site has some real traffic rather than applying today.
-const AMAZON_ASSOCIATE_TAG = 'youraffiliateid-20';
-
-function rentBuyHtml(item, rentBuy) {
-  if (!rentBuy || !rentBuy.length) return '';
-
-  const links = rentBuy
-    .map(({ id, name }) => {
-      if (id === 'amazon') {
-        const url = `https://www.amazon.com/s?k=${encodeURIComponent(item.title)}&i=instant-video&tag=${AMAZON_ASSOCIATE_TAG}`;
-        return `<a class="rentbuy-link" data-provider="amazon" href="${url}" target="_blank" rel="noopener sponsored">Rent or buy on ${name}</a>`;
-      }
-      const url = `https://tv.apple.com/search?term=${encodeURIComponent(item.title)}`;
-      return `<a class="rentbuy-link" data-provider="apple_tv" href="${url}" target="_blank" rel="noopener">Rent or buy on ${name}</a>`;
-    })
-    .join('');
-
-  return `
-    <div class="rentbuy-section">
-      <p class="vpn-lead">Not on a subscription you have? You can also:</p>
-      <div class="rentbuy-links">${links}</div>
-    </div>
-  `;
-}
-
 function resultLeftHtml(item, certification) {
   const badges = [];
   if (item.rating) badges.push(`<span class="badge">★ ${item.rating}</span>`);
@@ -210,6 +181,9 @@ function platformRowsHtml(platformList, checkedCount, idPrefix) {
       const mainTags = (p.mainCountries || []).map((c) => `<span class="region-tag">${c}</span>`).join('');
       const otherCountries = p.otherCountries || [];
       const moreId = `${idPrefix}-more-${idx}`;
+      const nameHtml = p.homepage
+        ? `<a class="platform-name" href="${p.homepage}" target="_blank" rel="noopener">${p.name}</a>`
+        : `<span class="platform-name">${p.name}</span>`;
 
       const seeMore = otherCountries.length
         ? `<button type="button" class="see-more" data-target="${moreId}">+${otherCountries.length} more</button>`
@@ -223,7 +197,7 @@ function platformRowsHtml(platformList, checkedCount, idPrefix) {
       return `
         <div class="platform">
           <div class="platform-top">
-            <span class="platform-name">${p.name}</span>
+            ${nameHtml}
             <span class="platform-count">${summary}</span>
           </div>
           <div class="platform-regions">${mainTags}${seeMore}</div>
@@ -257,7 +231,6 @@ function renderResult(item, data) {
         ${rows}
         ${regionalRows}
         ${data.hadErrors ? `<p class="note">Couldn't check a few regions just now — results may be incomplete.</p>` : ''}
-        ${rentBuyHtml(item, data.rentBuy)}
       </div>
     </div>
   `;
@@ -266,12 +239,6 @@ function renderResult(item, data) {
   resultEl.querySelectorAll('.see-more').forEach((btn) => {
     btn.addEventListener('click', () => {
       document.getElementById(btn.dataset.target).classList.toggle('hidden');
-    });
-  });
-
-  resultEl.querySelectorAll('.rentbuy-link').forEach((link) => {
-    link.addEventListener('click', () => {
-      if (typeof gtag === 'function') gtag('event', 'affiliate_click', { link_type: link.dataset.provider });
     });
   });
 }
