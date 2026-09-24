@@ -316,16 +316,21 @@ renderVpnSticky();
 startVpnMessageRotation();
 
 // On mobile the contact card isn't shown permanently -- it pops up for
-// 3 seconds every 30 seconds instead, so it never sits on screen long
-// enough to cover the sticky banner or clutter a small screen.
+// 3 seconds, first after a 2-second delay, then every 30 seconds after
+// that, so it never sits on screen long enough to cover the sticky
+// banner or clutter a small screen.
 const contactUs = document.getElementById('contact-us');
 if (contactUs && window.innerWidth <= 640) {
-  setInterval(() => {
+  const showContactUsBriefly = () => {
     contactUs.classList.add('mobile-visible');
     setTimeout(() => {
       contactUs.classList.remove('mobile-visible');
     }, 3000);
-  }, 30000);
+  };
+  setTimeout(() => {
+    showContactUsBriefly();
+    setInterval(showContactUsBriefly, 30000);
+  }, 2000);
 }
 
 document.getElementById('trending-prev').addEventListener('click', () => {
