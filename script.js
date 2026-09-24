@@ -325,7 +325,7 @@ if (contactUs && window.innerWidth <= 640) {
     contactUs.classList.add('mobile-visible');
     setTimeout(() => {
       contactUs.classList.remove('mobile-visible');
-    }, 3000);
+    }, 5000);
   };
   setTimeout(() => {
     showContactUsBriefly();
