@@ -7,8 +7,12 @@ const trendingGrid = document.getElementById('trending-grid');
 const posterWall = document.getElementById('poster-wall');
 const mainEl = document.querySelector('main');
 const vpnSticky = document.getElementById('vpn-sticky');
+const vpnModalOverlay = document.getElementById('vpn-modal-overlay');
+const vpnModalClose = document.getElementById('vpn-modal-close');
+const vpnModalContent = document.getElementById('vpn-modal-content');
 
 let debounceTimer;
+let vpnModalTimer = null;
 
 // Real ZoogVPN affiliate/tracking link.
 const ZOOGVPN_URL = 'https://zoogvpn.com/?utm_source=zoog_affiliate&utm_medium=revshare&utm_campaign=affx03boa09okh2n&a_aid=x03boa09okh2n';
@@ -52,6 +56,46 @@ function renderVpnSticky() {
   }
 }
 
+function renderVpnModal() {
+  vpnModalContent.innerHTML = `
+    <h2 class="vpn-modal-headline">Can't watch this here?</h2>
+    <p class="vpn-modal-sub">ZoogVPN gets you into a region where it's streaming — fast, secure, one click.</p>
+    <a class="vpn-modal-cta" href="${ZOOGVPN_URL}" target="_blank" rel="noopener sponsored">Get ZoogVPN →</a>
+    <p class="vpn-modal-disclosure">FlickFinder may earn a commission if you sign up through this link.</p>
+  `;
+  const link = vpnModalContent.querySelector('.vpn-modal-cta');
+  if (link && typeof gtag === 'function') {
+    link.addEventListener('click', () => gtag('event', 'affiliate_click', { link_type: 'zoogvpn_modal' }));
+  }
+}
+renderVpnModal();
+
+function showVpnModal() {
+  vpnModalOverlay.classList.add('visible');
+}
+
+function hideVpnModal() {
+  vpnModalOverlay.classList.remove('visible');
+}
+
+vpnModalClose.addEventListener('click', hideVpnModal);
+vpnModalOverlay.addEventListener('click', (e) => {
+  if (e.target === vpnModalOverlay) hideVpnModal();
+});
+
+// Fires 5 seconds after someone selects a title -- long enough that
+// they've actually seen whether it's available, so the VPN pitch lands
+// right when it's relevant instead of interrupting them immediately.
+function scheduleVpnModal() {
+  clearTimeout(vpnModalTimer);
+  vpnModalTimer = setTimeout(showVpnModal, 5000);
+}
+
+function cancelVpnModal() {
+  clearTimeout(vpnModalTimer);
+  hideVpnModal();
+}
+
 function resetHome() {
   input.value = '';
   suggestionsEl.classList.add('hidden');
@@ -60,6 +104,7 @@ function resetHome() {
   resultEl.innerHTML = '';
   trendingSection.classList.remove('hidden');
   mainEl.classList.remove('wide');
+  cancelVpnModal();
 }
 
 document.getElementById('logo').addEventListener('click', resetHome);
@@ -137,6 +182,7 @@ async function selectTitle(item) {
   trendingSection.classList.add('hidden');
   resultEl.classList.remove('hidden');
   mainEl.classList.add('wide');
+  scheduleVpnModal();
   resultEl.innerHTML = `
     ${backLinkHtml()}
     <div class="result-body">
