@@ -599,12 +599,39 @@ main.wide {
   flex-shrink: 0;
 }
 
-/* On narrow screens there isn't room for the contact card to overlap the
-   full-width sticky banner without covering it -- sit above it instead. */
+/* On narrow screens the card doesn't stay on permanently -- too big and
+   too easy to cover the sticky banner. It's hidden by default and
+   script.js pops it into view briefly on a timer instead. */
 @media (max-width: 640px) {
   .contact-us {
-    bottom: 4.75rem;
-    max-width: 190px;
+    bottom: 5rem;
+    max-width: 160px;
+    padding: 0.5rem 0.65rem;
+    gap: 0.3rem;
+    opacity: 0;
+    transform: translateY(6px);
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+
+  .contact-us.mobile-visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .contact-us-title {
+    font-size: 0.65rem;
+  }
+
+  .contact-row {
+    font-size: 0.7rem;
+    gap: 0.4rem;
+  }
+
+  .contact-icon {
+    width: 15px;
+    height: 15px;
   }
 }
 
